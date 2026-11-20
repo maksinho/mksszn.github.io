@@ -750,7 +750,7 @@ body.is-ua .client h3{font-family:var(--fontDisplayUa);font-size:clamp(26px,2.65
 }
 .lightbox-image #lbImg{z-index:1}
 @media(min-width:851px){
-  .lightbox-panel{grid-template-columns:minmax(0,var(--modal-art-width,57%)) minmax(0,1fr)!important}
+  .lightbox-panel{grid-template-columns:minmax(0,57%) minmax(0,1fr)!important}
 }
 .lightbox-info{gap:0}
 .lightbox-info > .lb-gallery-section[hidden]{display:none!important}
@@ -1640,6 +1640,33 @@ html:not(.mksszn-app-ready) .project.is-edge {visibility:visible!important}
 }
 @media(prefers-reduced-motion:reduce){.contact-list .contact-row .go{transition:none}}
 @media(max-width:850px){.contact-list .contact-row {grid-template-columns:44px minmax(0,1fr) 44px}}
+</style><style>
+#lightbox .lightbox-info {
+  display:grid;grid-template-rows:minmax(0,1fr) auto;
+  justify-content:stretch;align-content:stretch;
+  padding:clamp(20px,3vw,46px);row-gap:12px;
+}
+.lb-project-copy {min-height:0;min-width:0;overflow:clip}
+.lb-copy-content {display:flex;flex-direction:column;min-width:0}
+.lb-copy-content > * {flex:none}
+.lb-copy-content > [hidden] {display:none!important}
+#lightbox .lb-project-section {margin:0}
+#lightbox .lb-project-section .lightbox-btns {margin:8px 0 0;gap:10px;justify-content:flex-start}
+#lightbox .lb-project-section .lb-arrow {width:52px;height:44px}
+@media(max-width:850px){
+  #lightbox .lightbox-info {padding:12px 16px;row-gap:8px}
+  #lightbox .lb-project-section .lb-arrow {width:45px;height:40px}
+}
+</style><style>
+@media(min-width:851px){
+  #lightbox .lightbox-panel {container-type:size;background:transparent;border-color:transparent;box-shadow:none}
+  #lightbox .lightbox-image {
+    justify-self:end;width:min(100%,calc(100cqh * var(--art-ratio,1)));
+    height:100%;background:transparent!important;
+  }
+  #lightbox .lb-image-backdrop {display:none}
+  #lightbox .lightbox-info {background:#121115}
+}
 </style></head>
 <body>
 <div aria-hidden="true" class="global-grain"></div><div class="progress" id="progress"></div><div aria-hidden="true" class="cursor" id="cursor"></div>
@@ -1886,7 +1913,7 @@ html:not(.mksszn-app-ready) .project.is-edge {visibility:visible!important}
  <img alt="" id="lbImg" src=""/>
  <button class="lb-photo-hit lb-photo-hit-prev" id="lbImagePrev" type="button" aria-label="Previous photo" hidden><span aria-hidden="true">←</span></button>
  <button class="lb-photo-hit lb-photo-hit-next" id="lbImageNext" type="button" aria-label="Next photo" hidden><span aria-hidden="true">→</span></button>
-</div><div class="lightbox-info" role="region" aria-label="Full project details">
+</div><div class="lightbox-info" role="region" aria-label="Full project details"><div class="lb-project-copy"><div class="lb-copy-content">
  <span class="lightbox-kicker" data-i18n="demoProject"><span class="fallback-text-en">FOOTBALL / SELECTED WORK</span><span class="fallback-text-ua">ФУТБОЛ / ВИБРАНА РОБОТА</span></span>
  <h3 id="lbTitle"></h3><p id="lbDesc"></p>
  <a class="lightbox-link" hidden="" href="#" id="lbVisit" rel="noopener" target="_blank">VIEW POST ↗︎</a>
@@ -1894,7 +1921,7 @@ html:not(.mksszn-app-ready) .project.is-edge {visibility:visible!important}
   <div class="lb-nav-heading"><span id="lbGalleryLabel">PHOTOS IN THIS PROJECT</span><span id="lbGalleryCounter" aria-live="polite">01 / 04</span></div>
   <div class="lb-gallery-btns"><button class="lb-gallery-arrow" id="lbGalleryPrev" type="button" aria-label="Previous photo">←</button><button class="lb-gallery-arrow" id="lbGalleryNext" type="button" aria-label="Next photo">→</button></div>
  </div>
- <div class="lb-project-section"><div class="lb-nav-heading"><span id="lbProjectLabel">SWITCH PROJECTS</span><span class="lightbox-counter" id="lbCounter"></span></div>
+ </div></div><div class="lb-project-section"><div class="lb-nav-heading"><span id="lbProjectLabel">SWITCH PROJECTS</span><span class="lightbox-counter" id="lbCounter"></span></div>
   <div class="lightbox-btns"><button aria-label="Previous project" class="lb-arrow" id="lbPrev" type="button">←︎</button><button aria-label="Next project" class="lb-arrow" id="lbNext" type="button">→︎</button></div>
  </div>
 </div></div></div>
@@ -2293,6 +2320,10 @@ let modalFitFrame=0;
 function fitProjectModal(){
   if(!lightbox.classList.contains('open'))return;
   const panel=$('.lightbox-panel',lightbox),info=$('.lightbox-info',lightbox),title=$('#lbTitle');
+  const copy=info.querySelector('.lb-project-copy');
+  const content=copy.firstElementChild;
+  content.style.zoom='1';
+  $('#lbDesc').style.removeProperty('font-size');
   info.classList.remove('is-compact');
   title.style.removeProperty('font-size');
   const stacked=window.matchMedia('(max-width:850px)').matches;
@@ -2307,7 +2338,7 @@ function fitProjectModal(){
   }else panel.style.removeProperty('--modal-image-row');
   const maxFont=parseFloat(getComputedStyle(title).fontSize);
   const minFont=$('#lbGallerySection')?.hidden?(stacked?19:26):(stacked?17:25);
-  const fits=()=>title.scrollWidth<=title.clientWidth && info.scrollHeight<=info.clientHeight+1;
+  const fits=()=>title.scrollWidth<=title.clientWidth && content.getBoundingClientRect().height<=copy.clientHeight-2;
   function adjustFont(){
     title.style.fontSize=maxFont+'px';
     if(fits())return true;
@@ -2330,14 +2361,15 @@ function fitProjectModal(){
         if(adjustFont())break;
       }
     }
-    // Future descriptions can be longer: squeeze copy only after the title,
-    // margins and mobile image area have already been adjusted.
     if(!fits()){
-      const desc=$('#lbDesc');
-      for(const size of [11,10,9]){
-        desc.style.fontSize=size+'px';
-        if(adjustFont())break;
+      // Scale the content as a unit while keeping the navigation at full size.
+      let low=0, high=1;
+      for(let i=0;i<12;i++){
+        const scale=(low+high)/2;
+        content.style.zoom=String(scale);
+        if(fits())low=scale;else high=scale;
       }
+      content.style.zoom=String(low || 0.01);
     }
   }
   info.scrollTop=0;
@@ -2345,11 +2377,14 @@ function fitProjectModal(){
 }
 function queueProjectModalFit(){
   cancelAnimationFrame(modalFitFrame);
-  modalFitFrame=requestAnimationFrame(()=>{
-    requestAnimationFrame(fitProjectModal);
-  });
+  modalFitFrame=requestAnimationFrame(fitProjectModal);
 }
-window.addEventListener('resize',()=>{updateModalImageSizing();queueProjectModalFit()},{passive:true});
+if(window.ResizeObserver){
+  const observer=new ResizeObserver(queueProjectModalFit);
+  observer.observe(lightbox.querySelector('.lb-project-copy'));
+}
+if(document.fonts) document.fonts.addEventListener('loadingdone',queueProjectModalFit);
+window.addEventListener('resize',()=>{queueProjectModalFit()},{passive:true});
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(queueProjectModalFit);
 
 const visible=()=>projects.filter(p=>!p.hidden);function getProjectGallery(p){
@@ -2365,24 +2400,18 @@ function resetModalTransition(){
   clearTimeout(modalExitTimer);clearTimeout(modalEnterTimer);
   lightbox.classList.remove('modal-switch-out','modal-switch-in','modal-dir-next','modal-dir-prev','modal-photo-only');
 }
-function updateModalImageSizing(){
-  const image=$('#lbImg');const panel=$('.lightbox-panel',lightbox);
-  if(!image.naturalWidth||!image.naturalHeight||!lightbox.classList.contains('open'))return;
-  const ratio=image.naturalWidth/image.naturalHeight;
-  if(window.matchMedia('(min-width:851px)').matches){
-    const pw=panel.clientWidth,ph=panel.clientHeight;
-    const mediaWidth=Math.max(Math.min(pw*.43,465),Math.min(pw*.64,ph*ratio));
-    panel.style.setProperty('--modal-art-width',Math.round(mediaWidth)+'px');
-  }else{panel.style.removeProperty('--modal-art-width')}
+$('#lbImg').addEventListener('load',event=>{
+  const image=event.currentTarget;
+  if(image.naturalHeight) image.parentElement.style.setProperty('--art-ratio',String(image.naturalWidth/image.naturalHeight));
   queueProjectModalFit();
-}
-$('#lbImg').addEventListener('load',updateModalImageSizing);
+});
 function renderProject(){
   const list=visible();if(!list.length)return;
   current=(current+list.length)%list.length;
   const p=list[current],gallery=getProjectGallery(p);
   modalGalleryIndex=((modalGalleryIndex%gallery.length)+gallery.length)%gallery.length;
   const source=gallery[modalGalleryIndex]||$('img',p).src;
+  $('.lightbox-image',lightbox).style.setProperty('--art-ratio',p.style.getPropertyValue('--poster-aspect') || '1');
   $('#lbImg').src=source;$('#lbBackdrop').src=source;
   $('#lbImg').alt=(lang==='ua'?p.dataset.titleUa:p.dataset.title)+(gallery.length>1?' — '+(modalGalleryIndex+1)+' / '+gallery.length:'');
   setProjectTitle($('#lbTitle'),lang==='ua'?p.dataset.titleUa:p.dataset.title);
@@ -2407,9 +2436,9 @@ function renderProject(){
   for(const id of ['#lbGalleryNext','#lbImageNext'])$(id).setAttribute('aria-label',lang==='ua'?'Наступне фото':'Next photo');
   $('#lbPrev').setAttribute('aria-label',lang==='ua'?'Попередня робота':'Previous project');
   $('#lbNext').setAttribute('aria-label',lang==='ua'?'Наступна робота':'Next project');
-  $('.lightbox-info',lightbox).scrollTop=0;
+  $('.lb-project-copy',lightbox).scrollTop=0;
   $('.lightbox-panel',lightbox).scrollTop=0;
-  updateModalImageSizing();
+  
   queueProjectModalFit();
 }
 function transitionModal(direction,update,imageOnly=false){
@@ -2442,7 +2471,7 @@ function stepModalProject(direction){
   modalGalleryIndex=0;
   transitionModal(direction,renderProject);
 }
-function openProject(p){resetModalTransition();previousFocus=document.activeElement;current=visible().indexOf(p);modalGalleryIndex=0;renderProject();lightbox.classList.add('open');lightbox.setAttribute('aria-hidden','false');updateModalImageSizing();queueProjectModalFit();document.body.classList.add('modal-open');scheduleWorkAutoplay();$('#lbClose').focus()}
+function openProject(p){resetModalTransition();previousFocus=document.activeElement;current=visible().indexOf(p);modalGalleryIndex=0;renderProject();lightbox.classList.add('open');lightbox.setAttribute('aria-hidden','false');queueProjectModalFit();document.body.classList.add('modal-open');scheduleWorkAutoplay();$('#lbClose').focus()}
 function closeProject(){
   resetModalTransition();
   lightbox.classList.remove('open');lightbox.setAttribute('aria-hidden','true');
